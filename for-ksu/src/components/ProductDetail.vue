@@ -206,7 +206,7 @@ function stars(rating) {
   width: 100%;
   max-width: 1000px;
   max-height: 90vh;
-  overflow-y: auto;
+  overflow: hidden;
   display: grid;
   grid-template-columns: 1fr 1fr;
   position: relative;
@@ -296,6 +296,7 @@ function stars(rating) {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  overflow-y: auto;
 }
 
 .detail__title-row {
