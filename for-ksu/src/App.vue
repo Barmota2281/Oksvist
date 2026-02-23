@@ -1,6 +1,17 @@
 <script setup>
+import { watch } from 'vue'
 import AppHeader from './components/AppHeader.vue'
 import ProductCatalog from './components/ProductCatalog.vue'
+import { useAuthStore } from './stores/authStore'
+import { useCartStore } from './stores/cartStore'
+
+const authStore = useAuthStore()
+const cartStore = useCartStore()
+
+watch(() => authStore.isLoggedIn, (loggedIn) => {
+  if (loggedIn) cartStore.loadCart()
+  else cartStore.items = []
+}, { immediate: true })
 </script>
 
 <template>

@@ -1,13 +1,22 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { useCartStore } from '../stores/cartStore'
+import { useAuthStore } from '../stores/authStore'
 
 const props = defineProps({
   product: { type: Object, required: true }
 })
-defineEmits(['close'])
+const emit = defineEmits(['close'])
+
+const cartStore = useCartStore()
+const authStore = useAuthStore()
 
 const selectedSize = ref(null)
+const selectedColor = ref(null)
 const currentImg = ref(0)
+const addedMsg = ref(false)
+const needAuth = ref(false)
+const needSize = ref(false)
 
 const images = computed(() => {
   if (
@@ -28,7 +37,35 @@ const formattedPrice = computed(() => {
 })
 
 function selectSize(size) {
-  if (!isSoldOut.value) selectedSize.value = size
+  if (!isSoldOut.value) {
+    selectedSize.value = size
+    needSize.value = false
+  }
+}
+
+function selectColor(color) {
+  selectedColor.value = color
+}
+
+async function addToCart() {
+  needAuth.value = false
+  needSize.value = false
+
+  if (!authStore.isLoggedIn) {
+    needAuth.value = true
+    return
+  }
+  if (!selectedSize.value && props.product?.sizes?.length) {
+    needSize.value = true
+    return
+  }
+
+  const size = selectedSize.value || '—'
+  const color = selectedColor.value || props.product?.colors?.[0] || '—'
+
+  await cartStore.addItem(props.product, size, color)
+  addedMsg.value = true
+  setTimeout(() => { addedMsg.value = false }, 2000)
 }
 
 function stars(rating) {
@@ -109,15 +146,34 @@ function stars(rating) {
             {{ size }}
           </button>
         </div>
+        <p v-if="needSize" class="detail__hint">Пожалуйста, выберите размер</p>
 
-        <button class="detail__cart-btn" :class="{ soldout: isSoldOut }" :disabled="isSoldOut">
-          {{ isSoldOut ? 'РАСПРОДАНО' : 'ДОБАВИТЬ В КОРЗИНУ' }}
+        <div v-if="product.colors && product.colors.length" class="detail__color-section">
+          <div class="detail__sizes-label">Выберите цвет</div>
+          <div class="detail__colors-btns">
+            <button
+              v-for="color in product.colors"
+              :key="color"
+              class="detail__color-btn"
+              :class="{ active: selectedColor === color }"
+              @click="selectColor(color)"
+            >{{ color }}</button>
+          </div>
+        </div>
+
+        <p v-if="needAuth" class="detail__hint">Войдите, чтобы добавить в корзину</p>
+
+        <button
+          class="detail__cart-btn"
+          :class="{ soldout: isSoldOut, added: addedMsg }"
+          :disabled="isSoldOut"
+          @click="addToCart"
+        >
+          <span v-if="addedMsg">✓ ДОБАВЛЕНО</span>
+          <span v-else-if="isSoldOut">РАСПРОДАНО</span>
+          <span v-else>ДОБАВИТЬ В КОРЗИНУ</span>
         </button>
 
-        <div class="detail__colors" v-if="product.colors && product.colors.length">
-          <span class="detail__colors-label">Цвета:</span>
-          <span v-for="color in product.colors" :key="color" class="detail__color-tag">{{ color }}</span>
-        </div>
 
         <p class="detail__desc">{{ product.description }}</p>
 
@@ -346,7 +402,7 @@ function stars(rating) {
   transition: all 0.2s;
   text-transform: uppercase;
 }
-.detail__cart-btn:hover:not(.soldout) {
+.detail__cart-btn:hover:not(.soldout):not(.added) {
   background: rgba(226,215,151,0.1);
   border-color: #E2D797;
 }
@@ -354,26 +410,40 @@ function stars(rating) {
   opacity: 0.35;
   cursor: default;
 }
+.detail__cart-btn.added {
+  background: rgba(226,215,151,0.15);
+  border-color: #E2D797;
+}
 
-.detail__colors {
+.detail__hint {
+  font-size: 0.75rem;
+  color: #ffb3b3;
+  margin: -4px 0 0;
+}
+
+.detail__color-section {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 8px;
+}
+.detail__colors-btns {
+  display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
-.detail__colors-label {
-  font-size: 0.78rem;
-  color: #E2D797;
-  opacity: 0.6;
-}
-.detail__color-tag {
+.detail__color-btn {
   font-size: 0.75rem;
   color: #E2D797;
   border: 1px solid rgba(226,215,151,0.3);
   border-radius: 12px;
-  padding: 2px 10px;
-  opacity: 0.75;
+  padding: 4px 12px;
+  background: none;
+  cursor: pointer;
+  opacity: 0.65;
+  transition: all 0.2s;
 }
+.detail__color-btn:hover { opacity: 1; border-color: rgba(226,215,151,0.7); }
+.detail__color-btn.active { opacity: 1; border-color: #E2D797; background: rgba(226,215,151,0.1); }
 
 .detail__desc {
   font-size: 0.85rem;

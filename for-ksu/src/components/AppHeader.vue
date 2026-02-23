@@ -1,10 +1,30 @@
 <script setup>
 import { ref } from 'vue'
+import { useAuthStore } from '../stores/authStore'
+import { useCartStore } from '../stores/cartStore'
+import AuthModal from './AuthModal.vue'
+import CartPanel from './CartPanel.vue'
 
 const menuOpen = ref(false)
+const authModalOpen = ref(false)
+const cartOpen = ref(false)
+
+const authStore = useAuthStore()
+const cartStore = useCartStore()
 
 function openMenu() { menuOpen.value = true }
 function closeMenu() { menuOpen.value = false }
+
+function openAuth() { authModalOpen.value = true }
+function closeAuth() { authModalOpen.value = false }
+
+function toggleCart() { cartOpen.value = !cartOpen.value }
+function closeCart() { cartOpen.value = false }
+
+async function handleLogout() {
+  await authStore.logout()
+  cartStore.items = []
+}
 </script>
 
 <template>
@@ -23,18 +43,22 @@ function closeMenu() { menuOpen.value = false }
           <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
       </button>
-      <button class="header__icon-btn" aria-label="Профиль">
+
+      <button class="header__icon-btn" aria-label="Профиль" @click="authStore.isLoggedIn ? handleLogout() : openAuth()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
           <circle cx="12" cy="7" r="4"/>
         </svg>
+        <span v-if="authStore.isLoggedIn" class="header__user-dot"></span>
       </button>
-      <button class="header__icon-btn" aria-label="Корзина">
+
+      <button class="header__icon-btn header__cart-btn" aria-label="Корзина" @click="toggleCart">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
           <line x1="3" y1="6" x2="21" y2="6"/>
           <path d="M16 10a4 4 0 0 1-8 0"/>
         </svg>
+        <span v-if="cartStore.totalCount > 0" class="header__cart-count">{{ cartStore.totalCount }}</span>
       </button>
     </div>
   </header>
@@ -69,7 +93,11 @@ function closeMenu() { menuOpen.value = false }
       <div class="sidebar__divider"></div>
 
       <div class="sidebar__bottom">
-        <a href="#" @click="closeMenu">Войти</a>
+        <a v-if="!authStore.isLoggedIn" href="#" @click.prevent="closeMenu(); openAuth()">Войти</a>
+        <template v-else>
+          <span class="sidebar__user-name">{{ authStore.user?.display_name || authStore.user?.email }}</span>
+          <a href="#" @click.prevent="closeMenu(); handleLogout()">Выйти</a>
+        </template>
         <div class="sidebar__lang">
           Русский
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -79,6 +107,18 @@ function closeMenu() { menuOpen.value = false }
       </div>
     </nav>
   </transition>
+
+  <Teleport to="body">
+    <transition name="fade">
+      <AuthModal v-if="authModalOpen" @close="closeAuth" />
+    </transition>
+  </Teleport>
+
+  <Teleport to="body">
+    <transition name="slide-right">
+      <CartPanel v-if="cartOpen" @close="closeCart" />
+    </transition>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -140,9 +180,37 @@ function closeMenu() { menuOpen.value = false }
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
-.header__icon-btn:hover {
-  opacity: 0.6;
+.header__icon-btn:hover { opacity: 0.6; }
+
+.header__user-dot {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #E2D797;
+}
+
+.header__cart-btn { position: relative; }
+.header__cart-count {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  background: #E2D797;
+  color: #721E1E;
+  font-size: 0.6rem;
+  font-weight: 700;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  line-height: 1;
 }
 
 .sidebar-overlay {
@@ -250,6 +318,12 @@ function closeMenu() { menuOpen.value = false }
   opacity: 0.85;
 }
 .sidebar__bottom a:hover { opacity: 1; }
+.sidebar__user-name {
+  font-size: 0.85rem;
+  color: #fff;
+  opacity: 0.6;
+  font-style: italic;
+}
 
 .sidebar__lang {
   display: flex;
@@ -270,4 +344,9 @@ function closeMenu() { menuOpen.value = false }
 .slide-leave-active { transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
 .slide-enter-from,
 .slide-leave-to { transform: translateX(-100%); }
+
+.slide-right-enter-active,
+.slide-right-leave-active { transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
+.slide-right-enter-from,
+.slide-right-leave-to { transform: translateX(100%); }
 </style>
