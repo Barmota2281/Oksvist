@@ -31,3 +31,9 @@ a {
 button {
   cursor: pointer;
 }
+
+.detail-fade-enter-active,
+.detail-fade-leave-active { transition: opacity 0.25s; }
+.detail-fade-enter-from,
+.detail-fade-leave-to { opacity: 0; }
+

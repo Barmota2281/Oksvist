@@ -66,6 +66,9 @@ function closeProduct() {
       />
     </div>
 
+  </section>
+
+  <Teleport to="body">
     <transition name="detail-fade">
       <ProductDetail
         v-if="selectedProduct"
@@ -73,7 +76,7 @@ function closeProduct() {
         @close="closeProduct"
       />
     </transition>
-  </section>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -152,10 +155,6 @@ function closeProduct() {
   gap: 2px;
 }
 
-.detail-fade-enter-active,
-.detail-fade-leave-active { transition: opacity 0.25s; }
-.detail-fade-enter-from,
-.detail-fade-leave-to { opacity: 0; }
 
 @media (max-width: 1100px) {
   .catalog__grid { grid-template-columns: repeat(3, 1fr); }
