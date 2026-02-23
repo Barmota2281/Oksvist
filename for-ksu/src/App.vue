@@ -14,7 +14,7 @@ import AppHeader from './components/AppHeader.vue'
 .main-content {
   padding-top: 60px;
   text-align: center;
-  color: #111;
+  color: #E2D797;
   font-family: Arial, sans-serif;
 }
 </style>

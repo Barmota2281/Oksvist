@@ -93,8 +93,8 @@ function closeMenu() { menuOpen.value = false }
   justify-content: space-between;
   padding: 0 24px;
   height: 60px;
-  background: #fff;
-  border-bottom: 1px solid #e5e5e5;
+  background: #721E1E;
+  border-bottom: 1px solid #5a1717;
   box-sizing: border-box;
 }
 
@@ -111,7 +111,7 @@ function closeMenu() { menuOpen.value = false }
   display: block;
   width: 22px;
   height: 2px;
-  background: #111;
+  background: #E2D797;
   border-radius: 2px;
 }
 
@@ -120,7 +120,7 @@ function closeMenu() { menuOpen.value = false }
   font-weight: 900;
   font-size: 1.4rem;
   letter-spacing: 0.1em;
-  color: #111;
+  color: #E2D797;
   text-transform: uppercase;
   cursor: pointer;
   user-select: none;
@@ -136,7 +136,7 @@ function closeMenu() { menuOpen.value = false }
   border: none;
   cursor: pointer;
   padding: 6px;
-  color: #111;
+  color: #E2D797;
   display: flex;
   align-items: center;
   justify-content: center;
