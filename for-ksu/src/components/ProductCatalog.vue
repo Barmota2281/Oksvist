@@ -1,19 +1,26 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { collection, getDocs } from 'firebase/firestore'
 import { db } from '../firebase'
 import ProductCard from './ProductCard.vue'
 import ProductDetail from './ProductDetail.vue'
 
+const PAGE_SIZE = 6
+
 const products = ref([])
 const loading = ref(true)
 const activeCategory = ref('Все')
 const selectedProduct = ref(null)
+const visibleCount = ref(PAGE_SIZE)
 
 onMounted(async () => {
   const snap = await getDocs(collection(db, 'products'))
   products.value = snap.docs.map(d => ({ id: d.id, ...d.data() }))
   loading.value = false
+})
+
+watch(activeCategory, () => {
+  visibleCount.value = PAGE_SIZE
 })
 
 const categories = computed(() => {
@@ -25,6 +32,14 @@ const filtered = computed(() => {
   if (activeCategory.value === 'Все') return products.value
   return products.value.filter(p => p.category === activeCategory.value)
 })
+
+const visible = computed(() => filtered.value.slice(0, visibleCount.value))
+
+const hasMore = computed(() => visibleCount.value < filtered.value.length)
+
+function showMore() {
+  visibleCount.value += PAGE_SIZE
+}
 
 function openProduct(product) {
   selectedProduct.value = product
@@ -38,7 +53,6 @@ function closeProduct() {
   <section class="catalog">
     <div class="catalog__header">
       <h2 class="catalog__title">{{ activeCategory === 'Все' ? 'Все товары' : activeCategory }}</h2>
-      <button class="catalog__view-all">ПРОСМОТРЕТЬ ВСЕ ТОВАРЫ</button>
     </div>
 
     <div class="catalog__cats">
@@ -57,15 +71,23 @@ function closeProduct() {
       <span>Загрузка...</span>
     </div>
 
-    <div v-else class="catalog__grid">
-      <ProductCard
-        v-for="product in filtered"
-        :key="product.id"
-        :product="product"
-        @open="openProduct"
-      />
-    </div>
+    <template v-else>
+      <div class="catalog__grid">
+        <ProductCard
+          v-for="product in visible"
+          :key="product.id"
+          :product="product"
+          @open="openProduct"
+        />
+      </div>
 
+      <div v-if="hasMore" class="catalog__more-wrap">
+        <button class="catalog__more-btn" @click="showMore">
+          ПОКАЗАТЬ ЕЩЁ
+          <span class="catalog__more-count">({{ filtered.length - visibleCount }} товаров)</span>
+        </button>
+      </div>
+    </template>
   </section>
 
   <Teleport to="body">
@@ -87,10 +109,7 @@ function closeProduct() {
 .catalog__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   margin-bottom: 20px;
-  flex-wrap: wrap;
-  gap: 12px;
 }
 
 .catalog__title {
@@ -99,20 +118,6 @@ function closeProduct() {
   color: #E2D797;
   margin: 0;
 }
-
-.catalog__view-all {
-  background: #3d3d3d;
-  color: #E2D797;
-  border: none;
-  border-radius: 40px;
-  padding: 12px 24px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.catalog__view-all:hover { background: #4d4d4d; }
 
 .catalog__cats {
   display: flex;
@@ -155,6 +160,35 @@ function closeProduct() {
   gap: 2px;
 }
 
+.catalog__more-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+}
+.catalog__more-btn {
+  background: none;
+  border: 1px solid rgba(226,215,151,0.5);
+  border-radius: 40px;
+  padding: 14px 40px;
+  color: #E2D797;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.catalog__more-btn:hover {
+  background: rgba(226,215,151,0.08);
+  border-color: #E2D797;
+}
+.catalog__more-count {
+  font-weight: 400;
+  opacity: 0.6;
+  font-size: 0.72rem;
+}
 
 @media (max-width: 1100px) {
   .catalog__grid { grid-template-columns: repeat(3, 1fr); }
@@ -167,5 +201,3 @@ function closeProduct() {
   .catalog__grid { grid-template-columns: 1fr; }
 }
 </style>
-
-
