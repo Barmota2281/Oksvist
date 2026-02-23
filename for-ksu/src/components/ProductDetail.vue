@@ -10,13 +10,22 @@ const selectedSize = ref(null)
 const currentImg = ref(0)
 
 const images = computed(() => {
-  if (props.product.images && props.product.images.length > 0 && !props.product.images[0].includes('example.com')) {
+  if (
+    props.product?.images &&
+    props.product.images.length > 0 &&
+    !props.product.images[0].includes('example.com')
+  ) {
     return props.product.images
   }
   return null
 })
 
-const isSoldOut = computed(() => props.product.stock === 0)
+const isSoldOut = computed(() => Number(props.product?.stock) === 0)
+
+const formattedPrice = computed(() => {
+  const p = Number(props.product?.price)
+  return isNaN(p) ? '—' : p.toLocaleString('ru-RU') + '.00'
+})
 
 function selectSize(size) {
   if (!isSoldOut.value) selectedSize.value = size
@@ -71,7 +80,7 @@ function stars(rating) {
           <span v-if="isSoldOut" class="detail__badge">РАСПРОДАНО</span>
         </div>
 
-        <p class="detail__price">₸{{ product.price.toLocaleString('ru-RU') }}.00</p>
+        <p class="detail__price">₸{{ formattedPrice }}</p>
 
         <div class="detail__rating">
           <span v-for="i in 5" :key="i" class="detail__star" :class="{ filled: i <= stars(product.rating) }">★</span>

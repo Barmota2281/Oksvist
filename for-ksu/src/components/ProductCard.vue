@@ -1,8 +1,17 @@
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   product: { type: Object, required: true }
 })
 defineEmits(['open'])
+
+const formattedPrice = computed(() => {
+  const p = Number(props.product?.price)
+  return isNaN(p) ? '—' : p.toLocaleString('ru-RU') + '.00'
+})
+
+const isSoldOut = computed(() => Number(props.product?.stock) === 0)
 </script>
 
 <template>
@@ -21,11 +30,11 @@ defineEmits(['open'])
           <circle cx="28" cy="30" r="6" fill="#E2D797" opacity="0.4"/>
         </svg>
       </div>
-      <span v-if="product.stock === 0" class="card__badge">РАСПРОДАНО</span>
+      <span v-if="isSoldOut" class="card__badge">РАСПРОДАНО</span>
     </div>
     <div class="card__info">
       <p class="card__name">{{ product.name }}</p>
-      <p class="card__price">₸{{ product.price.toLocaleString('ru-RU') }}.00</p>
+      <p class="card__price">₸{{ formattedPrice }}</p>
     </div>
   </div>
 </template>
