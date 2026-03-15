@@ -1,7 +1,8 @@
 <script setup>
 import { watch } from 'vue'
+import { RouterView } from 'vue-router'
 import AppHeader from './components/AppHeader.vue'
-import ProductCatalog from './components/ProductCatalog.vue'
+import bwSlider from './components/PromoSlider.vue'
 import { useAuthStore } from './stores/authStore'
 import { useCartStore } from './stores/cartStore'
 
@@ -16,14 +17,15 @@ watch(() => authStore.isLoggedIn, (loggedIn) => {
 
 <template>
   <AppHeader />
+  <bwSlider />
   <main class="main-content">
-    <ProductCatalog />
+    <RouterView />
   </main>
 </template>
 
 <style scoped>
 .main-content {
-  padding-top: 60px;
+  padding-top: 24px;
   color: #E2D797;
   font-family: Arial, sans-serif;
 }
