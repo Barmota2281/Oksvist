@@ -11,6 +11,7 @@ import { useAuthStore } from '../stores/authStore'
 import { useCartStore } from '../stores/cartStore'
 import AuthModal from './AuthModal.vue'
 import CartPanel from './CartPanel.vue'
+import ProductDetail from './ProductDetail.vue'
 import heroImage from '../assets/header-bg.jpg'
 
 const authModalOpen = ref(false)
@@ -21,6 +22,7 @@ const cartStore = useCartStore()
 const router = useRouter()
 
 const sliderProducts = ref([])
+const selectedProduct = ref(null)
 const swiperModules = [Autoplay, Pagination]
 
 function openAuth() { authModalOpen.value = true }
@@ -47,6 +49,9 @@ function getImage(product) {
   return img
 }
 
+function openProduct(product) { selectedProduct.value = product }
+function closeProduct() { selectedProduct.value = null }
+
 onMounted(async () => {
   const snap = await getDocs(query(collection(db, 'products'), limit(5)))
   sliderProducts.value = snap.docs.map(d => ({ id: d.id, ...d.data() }))
@@ -65,7 +70,7 @@ onMounted(async () => {
       :pagination="{ clickable: true }"
     >
       <SwiperSlide v-for="product in sliderProducts" :key="product.id">
-        <div class="header__slide">
+        <div class="header__slide" @click="openProduct(product)">
           <img v-if="getImage(product)" :src="getImage(product)" :alt="product.name" class="header__slide-img" />
           <div v-else class="header__slide-placeholder"></div>
           <div class="header__slide-info">
@@ -124,6 +129,12 @@ onMounted(async () => {
       <CartPanel v-if="cartOpen" @close="closeCart" />
     </transition>
   </Teleport>
+
+  <Teleport to="body">
+    <transition name="detail-fade">
+      <ProductDetail v-if="selectedProduct" :product="selectedProduct" @close="closeProduct" />
+    </transition>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -147,6 +158,7 @@ onMounted(async () => {
   width: 100%;
   height: 100%;
   position: relative;
+  cursor: pointer;
 }
 
 .header__slide-img {
@@ -226,7 +238,7 @@ onMounted(async () => {
   min-width: 16px;
   height: 16px;
   background: #E2D797;
-  color: #721E1E;
+  color: #6E1920;
   font-size: 0.6rem;
   font-weight: 700;
   border-radius: 8px;
@@ -235,5 +247,26 @@ onMounted(async () => {
   justify-content: center;
   padding: 0 3px;
   line-height: 1;
+}
+
+@media (max-width: 1024px) {
+  .header { height: 420px; }
+  .header__slide-info { left: 18px; bottom: 16px; padding: 8px 12px; }
+  .header__slide-name { font-size: 1rem; }
+  .header__slide-price { font-size: 0.9rem; }
+}
+
+@media (max-width: 768px) {
+  .header { height: 320px; }
+  .header__icons { top: 10px; right: 12px; gap: 6px; }
+  .header__icon-btn { padding: 6px; border-radius: 8px; }
+  .header__slide-info { left: 14px; bottom: 12px; }
+}
+
+@media (max-width: 480px) {
+  .header { height: 240px; }
+  .header__slide-info { left: 10px; bottom: 10px; padding: 6px 10px; }
+  .header__slide-name { font-size: 0.9rem; }
+  .header__slide-price { font-size: 0.8rem; }
 }
 </style>

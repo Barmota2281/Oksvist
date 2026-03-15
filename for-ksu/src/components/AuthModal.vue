@@ -94,7 +94,7 @@ function close() {
 }
 
 .auth-modal {
-  background: #721E1E;
+  background: #6E1920;
   border: 1px solid #5a1717;
   border-radius: 6px;
   width: 100%;
@@ -203,4 +203,3 @@ function close() {
 }
 .auth-modal__submit:disabled { opacity: 0.45; cursor: default; }
 </style>
-

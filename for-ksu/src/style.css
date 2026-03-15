@@ -9,7 +9,7 @@
   line-height: 1.5;
   font-weight: 400;
   color: #E2D797;
-  background-color: #721E1E;
+  background-color: #6E1920;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -19,7 +19,7 @@
 body {
   min-width: 320px;
   min-height: 100vh;
-  background: #721E1E;
+  background: #6E1920;
   color: #E2D797;
 }
 
@@ -36,4 +36,3 @@ button {
 .detail-fade-leave-active { transition: opacity 0.25s; }
 .detail-fade-enter-from,
 .detail-fade-leave-to { opacity: 0; }
-

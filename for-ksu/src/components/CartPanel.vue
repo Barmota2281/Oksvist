@@ -87,7 +87,7 @@ const auth = useAuthStore()
   right: 0;
   width: 380px;
   height: 100vh;
-  background: #721E1E;
+  background: #6E1920;
   border-left: 1px solid #5a1717;
   z-index: 500;
   display: flex;
@@ -198,7 +198,7 @@ const auth = useAuthStore()
 .cart-item__price {
   font-size: 0.85rem;
   font-weight: 700;
-  color: #E2D797;
+  color: #6E1920;
   margin: 0;
 }
 .cart-item__qty {
@@ -265,7 +265,7 @@ const auth = useAuthStore()
   width: 100%;
   height: 50px;
   background: #E2D797;
-  color: #721E1E;
+  color: #6E1920;
   border: none;
   border-radius: 40px;
   font-size: 0.78rem;
@@ -292,4 +292,3 @@ const auth = useAuthStore()
   .cart-panel { width: 100%; }
 }
 </style>
-

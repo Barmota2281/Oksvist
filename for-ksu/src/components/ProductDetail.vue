@@ -200,7 +200,7 @@ function stars(rating) {
 }
 
 .detail {
-  background: #721E1E;
+  background: #6E1920;
   border: 1px solid #5a1717;
   border-radius: 4px;
   width: 100%;
