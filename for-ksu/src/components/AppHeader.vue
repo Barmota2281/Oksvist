@@ -1,19 +1,27 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { RouterLink, useRouter } from 'vue-router'
+import { collection, getDocs, limit, query } from 'firebase/firestore'
+import { db } from '../firebase'
+import { Swiper, SwiperSlide } from 'swiper/vue'
+import { Autoplay, Pagination } from 'swiper/modules'
+import 'swiper/css'
+import 'swiper/css/pagination'
 import { useAuthStore } from '../stores/authStore'
 import { useCartStore } from '../stores/cartStore'
 import AuthModal from './AuthModal.vue'
 import CartPanel from './CartPanel.vue'
+import heroImage from '../assets/header-bg.jpg'
 
-const menuOpen = ref(false)
 const authModalOpen = ref(false)
 const cartOpen = ref(false)
 
 const authStore = useAuthStore()
 const cartStore = useCartStore()
+const router = useRouter()
 
-function openMenu() { menuOpen.value = true }
-function closeMenu() { menuOpen.value = false }
+const sliderProducts = ref([])
+const swiperModules = [Autoplay, Pagination]
 
 function openAuth() { authModalOpen.value = true }
 function closeAuth() { authModalOpen.value = false }
@@ -24,32 +32,74 @@ function closeCart() { cartOpen.value = false }
 async function handleLogout() {
   await authStore.logout()
   cartStore.items = []
+  router.push('/')
 }
+
+function formatPrice(value) {
+  const p = Number(value)
+  return Number.isFinite(p) ? p.toLocaleString('ru-RU') : '—'
+}
+
+function getImage(product) {
+  const img = product?.images?.[0]
+  if (!img || typeof img !== 'string') return ''
+  if (img.includes('example.com')) return ''
+  return img
+}
+
+onMounted(async () => {
+  const snap = await getDocs(query(collection(db, 'products'), limit(5)))
+  sliderProducts.value = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+})
 </script>
 
 <template>
   <header class="header">
-    <button class="header__burger" @click="openMenu" aria-label="Открыть меню">
-      <span></span>
-      <span></span>
-      <span></span>
-    </button>
+    <Swiper
+      v-if="sliderProducts.length"
+      class="header__swiper"
+      :modules="swiperModules"
+      :slides-per-view="1"
+      :loop="sliderProducts.length > 1"
+      :autoplay="{ delay: 3500, disableOnInteraction: false }"
+      :pagination="{ clickable: true }"
+    >
+      <SwiperSlide v-for="product in sliderProducts" :key="product.id">
+        <div class="header__slide">
+          <img v-if="getImage(product)" :src="getImage(product)" :alt="product.name" class="header__slide-img" />
+          <div v-else class="header__slide-placeholder"></div>
+          <div class="header__slide-info">
+            <span class="header__slide-name">{{ product.name }}</span>
+            <span class="header__slide-price">₸{{ formatPrice(product.price) }}</span>
+          </div>
+        </div>
+      </SwiperSlide>
+    </Swiper>
 
-    <div class="header__logo">OKSVIST</div>
+    <img v-else :src="heroImage" alt="Oxystance banner" class="header__banner" />
 
     <div class="header__icons">
-      <button class="header__icon-btn" aria-label="Поиск">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
-      </button>
-
-      <button class="header__icon-btn" aria-label="Профиль" @click="authStore.isLoggedIn ? handleLogout() : openAuth()">
+      <button v-if="!authStore.isLoggedIn" class="header__icon-btn" aria-label="Вход" @click="openAuth">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
           <circle cx="12" cy="7" r="4"/>
         </svg>
-        <span v-if="authStore.isLoggedIn" class="header__user-dot"></span>
+      </button>
+
+      <RouterLink v-else to="/profile" class="header__icon-btn" aria-label="Личный кабинет">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        <span class="header__user-dot"></span>
+      </RouterLink>
+
+      <button v-if="authStore.isLoggedIn" class="header__icon-btn" aria-label="Выйти" @click="handleLogout">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
       </button>
 
       <button class="header__icon-btn header__cart-btn" aria-label="Корзина" @click="toggleCart">
@@ -62,51 +112,6 @@ async function handleLogout() {
       </button>
     </div>
   </header>
-
-  <transition name="fade">
-    <div v-if="menuOpen" class="sidebar-overlay" @click="closeMenu"></div>
-  </transition>
-
-  <transition name="slide">
-    <nav v-if="menuOpen" class="sidebar">
-      <div class="sidebar__top">
-        <span class="sidebar__label">МЕНЮ</span>
-        <button class="sidebar__close" @click="closeMenu" aria-label="Закрыть меню">✕</button>
-      </div>
-
-      <div class="sidebar__divider"></div>
-
-      <ul class="sidebar__main-links">
-        <li><a href="#" @click="closeMenu">Худи</a></li>
-        <li><a href="#" @click="closeMenu">Свитшоты</a></li>
-        <li><a href="#" @click="closeMenu">Лонги</a></li>
-        <li><a href="#" @click="closeMenu">Футболки</a></li>
-        <li><a href="#" @click="closeMenu">Нижняя одежда</a></li>
-        <li><a href="#" class="sidebar__all" @click="closeMenu">ПОСМОТРЕТЬ ВСЕ</a></li>
-      </ul>
-
-      <div class="sidebar__secondary">
-        <a href="#" @click="closeMenu">Контакты</a>
-        <a href="#" @click="closeMenu">О нас</a>
-      </div>
-
-      <div class="sidebar__divider"></div>
-
-      <div class="sidebar__bottom">
-        <a v-if="!authStore.isLoggedIn" href="#" @click.prevent="closeMenu(); openAuth()">Войти</a>
-        <template v-else>
-          <span class="sidebar__user-name">{{ authStore.user?.display_name || authStore.user?.email }}</span>
-          <a href="#" @click.prevent="closeMenu(); handleLogout()">Выйти</a>
-        </template>
-        <div class="sidebar__lang">
-          Русский
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <polyline points="6 9 12 15 18 9"/>
-          </svg>
-        </div>
-      </div>
-    </nav>
-  </transition>
 
   <Teleport to="body">
     <transition name="fade">
@@ -123,71 +128,90 @@ async function handleLogout() {
 
 <style scoped>
 .header {
-  position: fixed;
-  top: 0;
-  left: 0;
+  position: relative;
   width: 100%;
   z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  height: 60px;
-  background: #721E1E;
-  border-bottom: 1px solid #5a1717;
+  height: 600px;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
-.header__burger {
+.header__swiper,
+.header__banner {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.header__slide {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.header__slide-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.header__slide-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #5a1717;
+}
+
+.header__slide-info {
+  position: absolute;
+  left: 24px;
+  bottom: 20px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-}
-.header__burger span {
-  display: block;
-  width: 22px;
-  height: 2px;
-  background: #E2D797;
-  border-radius: 2px;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(226, 215, 151, 0.3);
+  border-radius: 12px;
+  padding: 10px 14px;
+  color: #E2D797;
 }
 
-.header__logo {
-  font-family: 'Arial Black', Arial, sans-serif;
-  font-weight: 900;
-  font-size: 1.4rem;
-  letter-spacing: 0.1em;
-  color: #E2D797;
-  text-transform: uppercase;
-  cursor: pointer;
-  user-select: none;
+.header__slide-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.header__slide-price {
+  font-size: 0.95rem;
+  font-weight: 600;
 }
 
 .header__icons {
+  position: absolute;
+  top: 14px;
+  right: 20px;
   display: flex;
   align-items: center;
   gap: 8px;
 }
+
 .header__icon-btn {
-  background: none;
-  border: none;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(226, 215, 151, 0.4);
+  border-radius: 10px;
   cursor: pointer;
-  padding: 6px;
+  padding: 8px;
   color: #E2D797;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
 }
-.header__icon-btn:hover { opacity: 0.6; }
 
 .header__user-dot {
   position: absolute;
-  bottom: 4px;
-  right: 4px;
+  bottom: 5px;
+  right: 5px;
   width: 7px;
   height: 7px;
   border-radius: 50%;
@@ -197,8 +221,8 @@ async function handleLogout() {
 .header__cart-btn { position: relative; }
 .header__cart-count {
   position: absolute;
-  top: 2px;
-  right: 2px;
+  top: 1px;
+  right: 1px;
   min-width: 16px;
   height: 16px;
   background: #E2D797;
@@ -212,141 +236,4 @@ async function handleLogout() {
   padding: 0 3px;
   line-height: 1;
 }
-
-.sidebar-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  z-index: 200;
-}
-
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 320px;
-  height: 100vh;
-  background: #3d3d3d;
-  z-index: 300;
-  display: flex;
-  flex-direction: column;
-  padding: 20px 28px;
-  box-sizing: border-box;
-  overflow-y: auto;
-}
-
-.sidebar__top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-.sidebar__label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  color: #fff;
-  text-transform: uppercase;
-}
-.sidebar__close {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #fff;
-  font-size: 1.2rem;
-  line-height: 1;
-  padding: 4px;
-}
-.sidebar__close:hover { opacity: 0.7; }
-
-.sidebar__divider {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.2);
-  margin: 12px 0;
-}
-
-.sidebar__main-links {
-  list-style: none;
-  padding: 0;
-  margin: 8px 0 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.sidebar__main-links li a {
-  display: block;
-  font-size: 1.55rem;
-  font-weight: 700;
-  color: #fff;
-  text-decoration: none;
-  padding: 6px 0;
-  transition: opacity 0.2s;
-  line-height: 1.2;
-}
-.sidebar__main-links li a:hover { opacity: 0.7; }
-
-.sidebar__all {
-  font-size: 1.55rem !important;
-  font-weight: 900 !important;
-  text-transform: uppercase;
-}
-
-.sidebar__secondary {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 28px;
-}
-.sidebar__secondary a {
-  font-size: 0.85rem;
-  color: #fff;
-  text-decoration: none;
-  opacity: 0.85;
-}
-.sidebar__secondary a:hover { opacity: 1; }
-
-.sidebar__bottom {
-  margin-top: 28px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-.sidebar__bottom a {
-  font-size: 0.85rem;
-  color: #fff;
-  text-decoration: none;
-  opacity: 0.85;
-}
-.sidebar__bottom a:hover { opacity: 1; }
-.sidebar__user-name {
-  font-size: 0.85rem;
-  color: #fff;
-  opacity: 0.6;
-  font-style: italic;
-}
-
-.sidebar__lang {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.85rem;
-  color: #fff;
-  opacity: 0.85;
-  cursor: pointer;
-}
-
-.fade-enter-active,
-.fade-leave-active { transition: opacity 0.3s; }
-.fade-enter-from,
-.fade-leave-to { opacity: 0; }
-
-.slide-enter-active,
-.slide-leave-active { transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
-.slide-enter-from,
-.slide-leave-to { transform: translateX(-100%); }
-
-.slide-right-enter-active,
-.slide-right-leave-active { transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
-.slide-right-enter-from,
-.slide-right-leave-to { transform: translateX(100%); }
 </style>
