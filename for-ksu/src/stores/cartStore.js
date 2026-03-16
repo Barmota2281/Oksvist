@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, getDoc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuthStore } from './authStore'
 
@@ -79,9 +79,35 @@ export const useCartStore = defineStore('cart', () => {
 
   async function clearCart() {
     items.value = []
-    await saveCart()
+    const authStore = useAuthStore()
+    if (authStore.user?.uid) {
+      await setDoc(doc(db, 'carts', authStore.user.uid), {
+        items: []
+      }, { merge: true })
+    }
   }
 
-  return { items, totalCount, totalPrice, loadCart, addItem, removeItem, updateQuantity, clearCart }
-})
+  async function checkout() {
+    const authStore = useAuthStore()
+    if (!authStore.isLoggedIn || items.value.length === 0) return
 
+    try {
+      const orderData = {
+        user_id: authStore.user.uid,
+        items: items.value,
+        total: totalPrice.value,
+        status: 'new',
+        created_at: serverTimestamp()
+      }
+
+      await addDoc(collection(db, 'orders'), orderData)
+      await clearCart()
+      return true
+    } catch (e) {
+      console.error('Checkout error:', e)
+      throw e
+    }
+  }
+
+  return { items, totalCount, totalPrice, loadCart, addItem, removeItem, updateQuantity, clearCart, checkout }
+})

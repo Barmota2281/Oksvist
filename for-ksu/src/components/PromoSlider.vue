@@ -12,6 +12,7 @@ import heroImage from '../assets/header-bg.jpg'
 const sliderProducts = ref([])
 const selectedProduct = ref(null)
 const swiperModules = [Autoplay, Pagination]
+const heroStyle = { backgroundImage: `url(${heroImage})` }
 
 function formatPrice(value) {
   const p = Number(value)
@@ -35,7 +36,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section class="promo-slider">
+  <section class="promo-slider" :style="heroStyle">
     <Swiper
       v-if="sliderProducts.length"
       class="slider-swiper"
@@ -57,7 +58,7 @@ onMounted(async () => {
       </SwiperSlide>
     </Swiper>
 
-    <img v-else :src="heroImage" alt="Banner" class="slider-banner" />
+    <div v-else class="slider-empty"></div>
 
     <Teleport to="body">
       <transition name="detail-fade">
@@ -71,25 +72,42 @@ onMounted(async () => {
 .promo-slider {
   position: relative;
   width: 100%;
-  height: 600px;
+  height: 650px;
   overflow: hidden;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
 }
 
 .slider-swiper,
-.slider-banner {
+.slider-empty {
   width: 100%;
   height: 100%;
   display: block;
+  --swiper-pagination-color: #E2D797;
+  --swiper-pagination-bullet-inactive-color: #E2D797;
+  --swiper-pagination-bullet-inactive-opacity: 0.3;
+}
+
+:deep(.swiper-slide) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .slide {
-  width: 100%;
-  height: 100%;
+  width: 450px;
+  height: 650px;
   position: relative;
   cursor: pointer;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1px solid rgba(226, 215, 151, 0.3);
+  max-width: 90%;
+  max-height: 90%;
 }
 
-.slide-img, .slider-banner {
+.slide-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -127,22 +145,24 @@ onMounted(async () => {
 }
 
 @media (max-width: 1024px) {
-  .promo-slider { height: 420px; }
+  .promo-slider { height: 350px; }
+  .slide { width: 400px; height: 300px; }
   .slide-info { left: 18px; bottom: 16px; padding: 8px 12px; }
   .slide-name { font-size: 1rem; }
   .slide-price { font-size: 0.9rem; }
 }
 
 @media (max-width: 768px) {
-  .promo-slider { height: 320px; }
+  .promo-slider { height: 280px; }
+  .slide { width: 300px; height: 240px; }
   .slide-info { left: 14px; bottom: 12px; }
 }
 
 @media (max-width: 480px) {
   .promo-slider { height: 240px; }
+  .slide { width: 260px; height: 200px; }
   .slide-info { left: 10px; bottom: 10px; padding: 6px 10px; }
   .slide-name { font-size: 0.9rem; }
   .slide-price { font-size: 0.8rem; }
 }
 </style>
-

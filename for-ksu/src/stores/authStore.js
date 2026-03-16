@@ -63,6 +63,24 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null
   }
 
+  async function updateUserData({ displayName, phone }) {
+    if (!auth.currentUser) return
+
+    if (displayName) {
+      await updateProfile(auth.currentUser, { displayName })
+    }
+
+    const userRef = doc(db, 'users', auth.currentUser.uid)
+    await setDoc(userRef, {
+      display_name: displayName,
+      phone: phone
+    }, { merge: true })
+
+    if (user.value) {
+      user.value = { ...user.value, display_name: displayName, phone }
+    }
+  }
+
   function clearError() {
     error.value = null
   }
@@ -80,6 +98,5 @@ export const useAuthStore = defineStore('auth', () => {
     return map[code] || 'Произошла ошибка. Попробуйте снова'
   }
 
-  return { user, loading, error, isLoggedIn, register, login, logout, clearError }
+  return { user, loading, error, isLoggedIn, register, login, logout, updateUserData, clearError }
 })
-

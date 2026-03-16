@@ -1,11 +1,27 @@
 <script setup>
 import { useCartStore } from '../stores/cartStore'
 import { useAuthStore } from '../stores/authStore'
+import { useRouter } from 'vue-router'
 
-defineEmits(['close'])
+const emit = defineEmits(['close'])
+const router = useRouter()
 
 const cart = useCartStore()
 const auth = useAuthStore()
+
+async function handleCheckout() {
+  if (confirm('Оформить заказ на сумму ' + cart.totalPrice.toLocaleString('ru-RU') + '₸?')) {
+    try {
+      await cart.checkout()
+      emit('close')
+      if (confirm('Заказ успешно оформлен! Хотите оставить отзыв?')) {
+        router.push('/profile?tab=reviews')
+      }
+    } catch (e) {
+      alert('Ошибка при оформлении заказа')
+    }
+  }
+}
 </script>
 
 <template>
@@ -67,7 +83,7 @@ const auth = useAuthStore()
         <span>Итого</span>
         <span>₸{{ cart.totalPrice.toLocaleString('ru-RU') }}.00</span>
       </div>
-      <button class="cart-panel__checkout">ОФОРМИТЬ ЗАКАЗ</button>
+      <button class="cart-panel__checkout" @click="handleCheckout">ОФОРМИТЬ ЗАКАЗ</button>
       <button class="cart-panel__clear" @click="cart.clearCart()">Очистить корзину</button>
     </div>
   </div>

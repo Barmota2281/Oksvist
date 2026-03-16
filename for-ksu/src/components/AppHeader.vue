@@ -28,6 +28,8 @@ async function handleLogout() {
 
 <template>
   <header class="header">
+    <RouterLink to="/" class="header__logo">Oxystance</RouterLink>
+
     <div class="header__icons">
       <button v-if="!authStore.isLoggedIn" class="header__icon-btn" aria-label="Вход" @click="openAuth">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -42,6 +44,13 @@ async function handleLogout() {
           <circle cx="12" cy="7" r="4"/>
         </svg>
         <span class="header__user-dot"></span>
+      </RouterLink>
+
+      <RouterLink v-if="authStore.user?.role === 'admin'" to="/admin" class="header__icon-btn" aria-label="Админ панель">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          <line x1="9" y1="3" x2="9" y2="21"/>
+        </svg>
       </RouterLink>
 
       <button v-if="authStore.isLoggedIn" class="header__icon-btn" aria-label="Выйти" @click="handleLogout">
@@ -78,13 +87,27 @@ async function handleLogout() {
 
 <style scoped>
 .header {
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100%;
   z-index: 100;
   height: 60px;
   box-sizing: border-box;
   background: #6E1920;
-  border-bottom: 1px solid rgba(226, 215, 151, 0.2);
+}
+
+.header__logo {
+  position: absolute;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #E2D797;
+  text-decoration: none;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .header__icons {
@@ -142,5 +165,6 @@ async function handleLogout() {
 @media (max-width: 768px) {
   .header__icons { right: 12px; gap: 6px; }
   .header__icon-btn { padding: 6px; border-radius: 8px; }
+  .header__logo { left: 16px; font-size: 1.2rem; }
 }
 </style>

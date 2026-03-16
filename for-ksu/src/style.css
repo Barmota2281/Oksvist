@@ -36,3 +36,25 @@ button {
 .detail-fade-leave-active { transition: opacity 0.25s; }
 .detail-fade-enter-from,
 .detail-fade-leave-to { opacity: 0; }
+
+/* Global Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.2);
+}
+::-webkit-scrollbar-thumb {
+  background: #E2D797;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background:rgba(226,215,151,0.8);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #E2D797 rgba(0,0,0,0.2);
+}
