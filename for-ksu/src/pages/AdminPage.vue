@@ -1,7 +1,7 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { db } from '../firebase'
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore'
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore'
 
 const activeTab = ref('dashboard') // dashboard, products, orders, users, reviews
 
@@ -12,6 +12,7 @@ const users = ref([])
 const reviews = ref([])
 
 const loading = ref(false)
+let unsubs = []
 
 // Dashboard Stats
 const totalRevenue = computed(() => orders.value.reduce((sum, o) => sum + (o.total || 0), 0))
@@ -104,36 +105,56 @@ async function updateUserRole(user, role) {
 async function removeReview(id) {
   if (!confirm('Удалить отзыв?')) return
   await deleteDoc(doc(db, 'reviews', id))
-  reviews.value = reviews.value.filter(r => r.id !== id)
 }
 
-async function fetchData() {
+function fetchData() {
   loading.value = true
+
+  unsubs.forEach(u => u())
+  unsubs = []
+
+  let loadedCount = 0
+  const checkLoading = () => {
+    loadedCount++
+    if (loadedCount >= 4) loading.value = false
+  }
+
   try {
     // Products
-    const pSnap = await getDocs(collection(db, 'products'))
-    products.value = pSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+    unsubs.push(onSnapshot(collection(db, 'products'), (snap) => {
+      products.value = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      checkLoading()
+    }))
 
     // Orders
-    const oSnap = await getDocs(query(collection(db, 'orders'), orderBy('created_at', 'desc')))
-    orders.value = oSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+    unsubs.push(onSnapshot(query(collection(db, 'orders'), orderBy('created_at', 'desc')), (snap) => {
+      orders.value = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      checkLoading()
+    }))
 
     // Users
-    const uSnap = await getDocs(collection(db, 'users'))
-    users.value = uSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+    unsubs.push(onSnapshot(collection(db, 'users'), (snap) => {
+      users.value = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      checkLoading()
+    }))
 
     // Reviews
-    const rSnap = await getDocs(query(collection(db, 'reviews'), orderBy('created_at', 'desc')))
-    reviews.value = rSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+    unsubs.push(onSnapshot(query(collection(db, 'reviews'), orderBy('created_at', 'desc')), (snap) => {
+      reviews.value = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      checkLoading()
+    }))
   } catch (e) {
     console.error(e)
-  } finally {
     loading.value = false
   }
 }
 
 onMounted(() => {
   fetchData()
+})
+
+onUnmounted(() => {
+  unsubs.forEach(u => u())
 })
 
 function formatPrice(val) {

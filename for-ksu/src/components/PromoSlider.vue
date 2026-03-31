@@ -1,6 +1,6 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { collection, getDocs, limit, query } from 'firebase/firestore'
+import { ref, onMounted, onUnmounted } from 'vue'
+import { collection, onSnapshot, limit, query } from 'firebase/firestore'
 import { db } from '../firebase'
 import { Swiper, SwiperSlide } from 'swiper/vue'
 import { Autoplay, Pagination } from 'swiper/modules'
@@ -29,9 +29,16 @@ function getImage(product) {
 function openProduct(product) { selectedProduct.value = product }
 function closeProduct() { selectedProduct.value = null }
 
-onMounted(async () => {
-  const snap = await getDocs(query(collection(db, 'products'), limit(5)))
-  sliderProducts.value = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+let unsub = null
+
+onMounted(() => {
+  unsub = onSnapshot(query(collection(db, 'products'), limit(5)), (snap) => {
+    sliderProducts.value = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  })
+})
+
+onUnmounted(() => {
+  if (unsub) unsub()
 })
 </script>
 
